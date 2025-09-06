@@ -30,12 +30,15 @@ app.use(
 app.use(cookieParser());
 app.use(express.json());
 
+// Import authentication routes
+import userRoutes from './routes/User.routes.js';
+
 // Basic health check route
 app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', message: 'Server is running' });
 });
 
-// Import and use routes (placeholder for future routes)
-// app.use('/api/users', userRoutes);
+// Authentication routes
+app.use('/api/auth', userRoutes);
 
 export { app };
