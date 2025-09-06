@@ -33,6 +33,7 @@ app.use(express.json());
 // Import authentication routes
 import userRoutes from './routes/User.routes.js';
 import oauthRoutes from './routes/OAuth.routes.js';
+import uploadRoutes from './routes/Upload.routes.js';
 import passport from './controllers/OAuth.controllers.js';
 
 // Initialize Passport
@@ -46,5 +47,8 @@ app.get('/api/health', (req, res) => {
 // Authentication routes
 app.use('/api/auth', userRoutes);
 app.use('/api/auth', oauthRoutes);
+
+// Upload routes
+app.use('/api/upload', uploadRoutes);
 
 export { app };

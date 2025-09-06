@@ -54,13 +54,36 @@ const Upload = () => {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     setIsProcessing(true);
-    // Simulate processing time
-    setTimeout(() => {
+    
+    try {
+      const fileNames = uploadedFiles.map(file => file.name);
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/upload/documents`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ files: fileNames }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`Analysis completed! Risk Level: ${data.results.riskLevel}. Check the console for detailed results.`);
+        console.log('Analysis Results:', data.results);
+        // In a real app, you'd navigate to a results page
+      } else {
+        alert(`Analysis failed: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Analysis error:', error);
+      alert('Analysis failed. Please make sure you are logged in and try again.');
+    } finally {
       setIsProcessing(false);
-      // Here you would typically navigate to results or show analysis
-    }, 3000);
+    }
   };
 
   const acceptedFormats = [
