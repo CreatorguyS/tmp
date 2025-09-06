@@ -111,8 +111,27 @@ const SignIn = () => {
         </button>
       </form>
 
+      {/* Demo Credentials */}
+      <div className="mt-6 p-4 bg-blue-900/30 border border-blue-700/50 rounded-lg">
+        <h4 className="text-sm font-semibold text-blue-300 mb-2">Demo Credentials:</h4>
+        <div className="text-sm text-blue-200 space-y-1">
+          <div>Email: <span className="font-mono text-blue-100">demo@healthspectrum.com</span></div>
+          <div>Password: <span className="font-mono text-blue-100">demo123</span></div>
+        </div>
+        <button 
+          type="button"
+          onClick={() => {
+            setEmail('demo@healthspectrum.com');
+            setPassword('demo123');
+          }}
+          className="mt-2 text-xs text-blue-400 hover:text-blue-300 underline"
+        >
+          Click to fill demo credentials
+        </button>
+      </div>
+
       {/* Footer with a toggle link to sign up */}
-      <div className="mt-8 text-center text-gray-400">
+      <div className="mt-6 text-center text-gray-400">
         Don't have an account?{" "}
         <Link
           to="/auth/sign-up"

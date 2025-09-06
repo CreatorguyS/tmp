@@ -72,11 +72,34 @@ const Upload = () => {
       const data = await response.json();
 
       if (data.success) {
-        alert(`Analysis completed! Risk Level: ${data.results.riskLevel}. Check the console for detailed results.`);
-        console.log('Analysis Results:', data.results);
-        // In a real app, you'd navigate to a results page
+        const results = data.results;
+        alert(`✅ Analysis Complete!\n\nRisk Level: ${results.riskLevel}\nConfidence: ${results.confidence}%\nFiles Processed: ${results.processedFiles}\n\nCheck console for detailed medical insights.`);
+        console.log('🏥 Medical Analysis Results:', results);
+        
+        // Show detailed results in a more user-friendly way
+        const detailedMsg = `
+📊 MEDICAL ANALYSIS RESULTS
+═══════════════════════════
+
+📈 Risk Assessment: ${results.riskLevel} (${results.confidence}% confidence)
+⏱️  Processing Time: ${results.processingTime}
+📁 Files Analyzed: ${results.processedFiles}
+
+🔍 KEY FINDINGS:
+${results.keyFindings.map(finding => `• ${finding}`).join('\n')}
+
+💡 RECOMMENDATIONS:
+${results.recommendations.map(rec => `• ${rec}`).join('\n')}
+
+Analysis ID: ${results.analysisId}
+Timestamp: ${new Date(results.timestamp).toLocaleString()}
+        `;
+        console.log(detailedMsg);
+        
+        // Clear uploaded files after successful analysis
+        setUploadedFiles([]);
       } else {
-        alert(`Analysis failed: ${data.message}`);
+        alert(`❌ Analysis Failed: ${data.message}`);
       }
     } catch (error) {
       console.error('Analysis error:', error);
