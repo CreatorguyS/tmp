@@ -10,9 +10,8 @@ export default defineConfig(({ mode }) => ({
     port: 5000,
     strictPort: true,
     allowedHosts: true,
-    hmr: {
-      port: 5000,
-    },
+    hmr: false,
+    ws: false,
   },
   plugins: [react()].filter(Boolean),
   resolve: {
