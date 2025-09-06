@@ -1,5 +1,6 @@
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
   Upload as UploadIcon,
   FileText,
@@ -13,14 +14,19 @@ import {
   Zap,
   ArrowRight,
   X,
+  Scan,
+  Activity,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 
 const Upload = () => {
+  const navigate = useNavigate();
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStep, setProcessingStep] = useState(0);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -54,13 +60,27 @@ const Upload = () => {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const processingSteps = [
+    { icon: Scan, title: "OCR Processing", description: "Extracting text from documents" },
+    { icon: Brain, title: "AI Analysis", description: "Analyzing medical data with 95% accuracy" },
+    { icon: Activity, title: "Risk Assessment", description: "Evaluating health risks and patterns" },
+    { icon: FileCheck, title: "Report Generation", description: "Creating comprehensive health insights" }
+  ];
+
   const handleAnalyze = async () => {
     setIsProcessing(true);
+    setProcessingStep(0);
     
     try {
       const fileNames = uploadedFiles.map(file => file.name);
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/upload/documents`, {
+      // Simulate step-by-step processing
+      for (let i = 0; i < processingSteps.length; i++) {
+        setProcessingStep(i);
+        await new Promise(resolve => setTimeout(resolve, 1200));
+      }
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL || '/api-proxy'}/api/upload/documents`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -72,32 +92,8 @@ const Upload = () => {
       const data = await response.json();
 
       if (data.success) {
-        const results = data.results;
-        alert(`✅ Analysis Complete!\n\nRisk Level: ${results.riskLevel}\nConfidence: ${results.confidence}%\nFiles Processed: ${results.processedFiles}\n\nCheck console for detailed medical insights.`);
-        console.log('🏥 Medical Analysis Results:', results);
-        
-        // Show detailed results in a more user-friendly way
-        const detailedMsg = `
-📊 MEDICAL ANALYSIS RESULTS
-═══════════════════════════
-
-📈 Risk Assessment: ${results.riskLevel} (${results.confidence}% confidence)
-⏱️  Processing Time: ${results.processingTime}
-📁 Files Analyzed: ${results.processedFiles}
-
-🔍 KEY FINDINGS:
-${results.keyFindings.map(finding => `• ${finding}`).join('\n')}
-
-💡 RECOMMENDATIONS:
-${results.recommendations.map(rec => `• ${rec}`).join('\n')}
-
-Analysis ID: ${results.analysisId}
-Timestamp: ${new Date(results.timestamp).toLocaleString()}
-        `;
-        console.log(detailedMsg);
-        
-        // Clear uploaded files after successful analysis
-        setUploadedFiles([]);
+        // Navigate to results page with the analysis data
+        navigate('/results', { state: { analysisResults: data.results } });
       } else {
         alert(`❌ Analysis Failed: ${data.message}`);
       }
@@ -106,6 +102,7 @@ Timestamp: ${new Date(results.timestamp).toLocaleString()}
       alert('Analysis failed. Please make sure you are logged in and try again.');
     } finally {
       setIsProcessing(false);
+      setProcessingStep(0);
     }
   };
 
@@ -128,19 +125,37 @@ Timestamp: ${new Date(results.timestamp).toLocaleString()}
       icon: Brain,
       title: "AI-Powered Analysis",
       description:
-        "Advanced medical AI extracts and analyzes key health insights from your documents with 95% accuracy.",
+        "Advanced medical AI analyzes your documents with 95% accuracy, extracting key health insights and risk factors.",
     },
     {
       icon: Shield,
-      title: "HIPAA Compliant Security",
+      title: "HIPAA Compliant",
       description:
-        "Your medical data is encrypted end-to-end and processed with full HIPAA compliance standards.",
+        "Your medical data is encrypted and processed securely with full HIPAA compliance and privacy protection.",
     },
     {
       icon: Clock,
       title: "Instant Results",
       description:
-        "Get comprehensive health analysis and risk assessments in under 60 seconds.",
+        "Get comprehensive health analysis in under 60 seconds, no waiting for manual review or interpretation.",
+    },
+    {
+      icon: Scan,
+      title: "Document OCR",
+      description:
+        "Extract text from any medical document format - PDFs, images, handwritten notes, and lab reports.",
+    },
+    {
+      icon: Activity,
+      title: "Risk Assessment",
+      description:
+        "Identify potential health risks and get severity indicators with clear explanations and next steps.",
+    },
+    {
+      icon: Share2,
+      title: "Share with Doctors",
+      description:
+        "Generate professional reports that you can easily share with your healthcare providers for better care.",
     },
   ];
 
@@ -321,9 +336,9 @@ Timestamp: ${new Date(results.timestamp).toLocaleString()}
                             }}
                             className="w-5 h-5 mr-2"
                           >
-                            <Brain className="w-5 h-5" />
+                            {React.createElement(processingSteps[processingStep].icon, { className: "w-5 h-5" })}
                           </motion.div>
-                          Analyzing Documents...
+                          {processingSteps[processingStep].title}...
                         </>
                       ) : (
                         <>
@@ -333,6 +348,42 @@ Timestamp: ${new Date(results.timestamp).toLocaleString()}
                         </>
                       )}
                     </Button>
+
+                    {/* Processing Steps Indicator */}
+                    {isProcessing && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-6 space-y-3"
+                      >
+                        <h4 className="text-sm font-semibold text-foreground">Processing Steps:</h4>
+                        {processingSteps.map((step, index) => (
+                          <div
+                            key={index}
+                            className={`flex items-center space-x-3 p-2 rounded ${
+                              index <= processingStep
+                                ? 'bg-primary/20 border border-primary/30'
+                                : 'bg-muted/20 border border-muted/30'
+                            }`}
+                          >
+                            <step.icon className={`w-4 h-4 ${
+                              index <= processingStep ? 'text-primary' : 'text-muted-foreground'
+                            }`} />
+                            <div>
+                              <p className={`text-sm font-medium ${
+                                index <= processingStep ? 'text-primary' : 'text-muted-foreground'
+                              }`}>
+                                {step.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground">{step.description}</p>
+                            </div>
+                            {index < processingStep && (
+                              <CheckCircle className="w-4 h-4 text-green-400 ml-auto" />
+                            )}
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
                   </motion.div>
                 )}
               </motion.div>
@@ -350,7 +401,7 @@ Timestamp: ${new Date(results.timestamp).toLocaleString()}
                   </h3>
                 </div>
 
-                <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {features.map((feature, index) => (
                     <motion.div
                       key={feature.title}
