@@ -52,9 +52,9 @@ const initializeDemoUsers = async () => {
         const user = {
             _id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
             email: userData.email,
-            password: hashedPassword,
+            passwordHash: hashedPassword,
             name: userData.name,
-            isVerified: true,
+            verified: true,
             lastLogin: new Date(),
             createdAt: new Date(),
             updatedAt: new Date()
@@ -97,9 +97,9 @@ export const registerUser = async (req, res) => {
         const user = {
             _id: userId,
             email,
-            password: hashedPassword,
+            passwordHash: hashedPassword,
             name,
-            isVerified: false,
+            verified: false,
             lastLogin: new Date(),
             createdAt: new Date(),
             updatedAt: new Date()
@@ -114,7 +114,7 @@ export const registerUser = async (req, res) => {
 
         // Remove password from response
         const userResponse = { ...user };
-        delete userResponse.password;
+        delete userResponse.passwordHash;
 
         res.status(201).json({
             success: true,
@@ -154,7 +154,7 @@ export const loginUser = async (req, res) => {
         }
 
         // Compare password
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+        const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
         if (!isPasswordValid) {
             return res.status(401).json({
                 success: false,
@@ -172,7 +172,7 @@ export const loginUser = async (req, res) => {
 
         // Remove password from response
         const userResponse = { ...user };
-        delete userResponse.password;
+        delete userResponse.passwordHash;
 
         res.status(200).json({
             success: true,
@@ -228,7 +228,7 @@ export const getCurrentUser = async (req, res) => {
 
         // Remove password from response
         const userResponse = { ...foundUser };
-        delete userResponse.password;
+        delete userResponse.passwordHash;
 
         res.status(200).json({
             success: true,
