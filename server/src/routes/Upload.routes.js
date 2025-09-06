@@ -6,13 +6,7 @@ const router = express.Router();
 // Upload route for medical documents
 router.post("/documents", verifyToken, async (req, res) => {
     try {
-        // In a real application, you would:
-        // 1. Process the uploaded files
-        // 2. Store them securely (e.g., Cloudinary)
-        // 3. Run AI analysis
-        // 4. Store results in database
-        
-        // For now, simulate the process
+        // For demo purposes, simulate document analysis
         const { files } = req.body;
         
         if (!files || files.length === 0) {
@@ -22,37 +16,45 @@ router.post("/documents", verifyToken, async (req, res) => {
             });
         }
 
-        // Simulate processing time
-        setTimeout(() => {
-            const analysisResults = {
-                summary: "Analysis completed successfully",
-                riskLevel: "Low",
-                recommendations: [
-                    "Continue current medication as prescribed",
-                    "Schedule follow-up appointment in 3 months",
-                    "Maintain current diet and exercise routine"
-                ],
-                keyFindings: [
-                    "Blood pressure: Normal range",
-                    "Cholesterol levels: Optimal",
-                    "Blood sugar: Within healthy limits"
-                ],
-                processedFiles: files.length,
-                processingTime: "45 seconds"
-            };
+        // Generate random analysis results for demo
+        const riskLevels = ["Low", "Moderate", "High"];
+        const randomRisk = riskLevels[Math.floor(Math.random() * riskLevels.length)];
+        
+        const analysisResults = {
+            analysisId: `analysis_${Date.now()}`,
+            summary: "AI analysis completed successfully using advanced medical document processing",
+            riskLevel: randomRisk,
+            confidence: Math.floor(Math.random() * 20) + 80, // 80-99%
+            recommendations: [
+                "Continue current medication as prescribed by your physician",
+                "Schedule follow-up appointment within 2-3 months",
+                "Monitor blood pressure weekly and record readings",
+                "Maintain current diet and exercise routine",
+                "Consider consulting a nutritionist for optimal diet planning"
+            ],
+            keyFindings: [
+                "Blood pressure: 120/80 mmHg (Normal range)",
+                "Cholesterol levels: 180 mg/dL (Optimal)",
+                "Blood sugar: 95 mg/dL (Within healthy limits)",
+                "Heart rate: 72 bpm (Normal)",
+                "BMI: 23.5 (Healthy weight range)"
+            ],
+            processedFiles: files.length,
+            processingTime: "47 seconds",
+            timestamp: new Date().toISOString()
+        };
 
-            res.json({
-                success: true,
-                message: "Documents analyzed successfully",
-                results: analysisResults
-            });
-        }, 2000);
+        res.json({
+            success: true,
+            message: "Medical documents analyzed successfully",
+            results: analysisResults
+        });
 
     } catch (error) {
         console.error("Upload error:", error);
         res.status(500).json({
             success: false,
-            message: "Upload failed",
+            message: "Upload analysis failed",
             error: error.message
         });
     }

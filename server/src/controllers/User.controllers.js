@@ -23,8 +23,49 @@ const setTokenCookie = (res, token) => {
     res.cookie("authToken", token, cookieOptions);
 };
 
-// Temporary in-memory storage for development
+// Temporary in-memory storage for development with pre-populated demo users
 const users = new Map();
+
+// Pre-populate with demo users for testing
+const initializeDemoUsers = async () => {
+    const bcrypt = await import('bcrypt');
+    const demoUsers = [
+        {
+            email: 'demo@healthspectrum.com',
+            password: 'demo123',
+            name: 'Demo User'
+        },
+        {
+            email: 'patient@example.com', 
+            password: 'patient123',
+            name: 'John Patient'
+        },
+        {
+            email: 'test@test.com',
+            password: 'test123',
+            name: 'Test User'
+        }
+    ];
+
+    for (const userData of demoUsers) {
+        const hashedPassword = await bcrypt.default.hash(userData.password, 12);
+        const user = {
+            _id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            email: userData.email,
+            password: hashedPassword,
+            name: userData.name,
+            isVerified: true,
+            lastLogin: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date()
+        };
+        users.set(userData.email, user);
+    }
+    console.log('✅ Demo users initialized:', demoUsers.map(u => u.email).join(', '));
+};
+
+// Initialize demo users
+initializeDemoUsers();
 
 // Register new user
 export const registerUser = async (req, res) => {
