@@ -25,6 +25,16 @@ const userSchema = new mongoose.Schema(
             trim: true,
             maxLength: [50, "Name cannot exceed 50 characters"],
         },
+        googleId: {
+            type: String,
+            sparse: true,
+            unique: true,
+        },
+        githubId: {
+            type: String,
+            sparse: true,
+            unique: true,
+        },
         isVerified: {
             type: Boolean,
             default: false,

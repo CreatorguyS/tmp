@@ -31,13 +31,17 @@ const AuthLayout = () => {
 
             {/* Social Logins */}
             <div className="space-y-4 mb-6">
-              <button className="w-full flex items-center gap-2 justify-center p-3 border border-gray-700 rounded-lg custom-shadow hover:bg-gray-800 transition-colors">
-                {/* {googleIcon} */}
+              <button 
+                onClick={() => window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/google`}
+                className="w-full flex items-center gap-2 justify-center p-3 border border-gray-700 rounded-lg custom-shadow hover:bg-gray-800 transition-colors"
+              >
                 <FcGoogle />
                 <span>Log in with Google</span>
               </button>
-              <button className="w-full flex items-center justify-center p-3 gap-2 border border-gray-700 rounded-lg custom-shadow hover:bg-gray-800 transition-colors">
-                {/* {appleIcon} */}
+              <button 
+                onClick={() => window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/github`}
+                className="w-full flex items-center justify-center p-3 gap-2 border border-gray-700 rounded-lg custom-shadow hover:bg-gray-800 transition-colors"
+              >
                 <FaGithub />
                 <span>Log in with Github</span>
               </button>
