@@ -264,15 +264,49 @@ const Upload = () => {
                           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                           onChange={handleFileInput}
                           style={{ display: 'none' }}
+                          id="hidden-file-input"
                         />
-                        <Button 
-                          type="button"
-                          className="btn-medical-primary cursor-pointer"
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          <UploadIcon className="w-5 h-5 mr-2" />
-                          Choose Files
-                        </Button>
+                        
+                        {/* Try a simple HTML approach */}
+                        <div className="space-y-4">
+                          <label 
+                            htmlFor="hidden-file-input" 
+                            className="btn-medical-primary cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2"
+                            style={{
+                              background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
+                              color: 'white',
+                              border: 'none',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '8px'
+                            }}
+                          >
+                            <UploadIcon style={{ width: '20px', height: '20px' }} />
+                            Choose Files (Label Method)
+                          </label>
+                          
+                          <div>
+                            <Button 
+                              type="button"
+                              className="btn-medical-primary cursor-pointer"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log('Button clicked!');
+                                const input = document.getElementById('hidden-file-input') as HTMLInputElement;
+                                if (input) {
+                                  console.log('Found input, clicking...');
+                                  input.click();
+                                } else {
+                                  console.error('Could not find input element');
+                                }
+                              }}
+                            >
+                              <UploadIcon className="w-5 h-5 mr-2" />
+                              Choose Files (Button Method)
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     </motion.div>
                   </div>
