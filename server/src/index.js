@@ -1,23 +1,28 @@
-import { app } from "./app";
-import { connectdb, disconnectdb } from "./db";
+import { app } from "./app.js";
+import { connectdb, disconnectdb } from "./db/index.js";
 
 let server;
-connectdb()
-    .then(() => {
-        app.on("error", (error) => {
-            console.log("Error!!", error);
-            throw error;
+const PORT = process.env.PORT || 3001;
+
+// Start server first, then connect to database
+app.on("error", (error) => {
+    console.log("Server Error!!", error);
+    throw error;
+});
+
+server = app.listen(PORT, () => {
+    console.log(`✅ Server running on port ${PORT}`);
+    
+    // Try to connect to MongoDB after server starts
+    connectdb()
+        .then(() => {
+            console.log("✅ MongoDB connected successfully");
+        })
+        .catch((error) => {
+            console.log("⚠️  MongoDB connection failed:", error.message);
+            console.log("Server will continue running without database");
         });
-        server = app.listen(process.env.PORT, () => {
-            console.log(
-                `Mongodb is connected successfully to port:${process.env.PORT}`
-            );
-        });
-    })
-    .catch((error) => {
-        console.log("MONGODB failed to connect!!!", error);
-        process.exit(1);
-    });
+});
 
 ["SIGTERM", "SIGINT"].forEach((sig) =>
     process.on(sig, async () => {
