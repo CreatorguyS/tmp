@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Upload as UploadIcon,
   FileText,
@@ -95,11 +95,18 @@ const Upload = () => {
         // Navigate to results page with the analysis data
         navigate('/results', { state: { analysisResults: data.results } });
       } else {
-        alert(`❌ Analysis Failed: ${data.message}`);
+        if (data.message === "No authentication token provided") {
+          alert('🔐 Please sign in to analyze your documents. Click "Log In/Sign Up" in the top navigation to get started.');
+          // Redirect to sign in page
+          setTimeout(() => navigate('/auth/sign-in'), 2000);
+        } else {
+          alert(`❌ Analysis Failed: ${data.message}`);
+        }
       }
     } catch (error) {
       console.error('Analysis error:', error);
-      alert('Analysis failed. Please make sure you are logged in and try again.');
+      alert('❌ Upload failed. Please sign in first by clicking "Log In/Sign Up" in the navigation above, then try again.');
+      setTimeout(() => navigate('/auth/sign-in'), 3000);
     } finally {
       setIsProcessing(false);
       setProcessingStep(0);
@@ -188,6 +195,25 @@ const Upload = () => {
                 instantly to provide you with clear health insights and
                 recommendations.
               </p>
+
+              {/* Authentication Notice */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mt-6 bg-primary-soft border border-primary/30 rounded-xl p-4 max-w-2xl mx-auto"
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  <Shield className="w-5 h-5 text-primary" />
+                  <p className="text-primary font-medium">
+                    Sign in required to analyze documents.{" "}
+                    <Link to="/auth/sign-in" className="underline hover:text-primary-glow transition-colors">
+                      Click here to sign in
+                    </Link>{" "}
+                    or use demo credentials: demo@healthspectrum.com / demo123
+                  </p>
+                </div>
+              </motion.div>
             </motion.div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
