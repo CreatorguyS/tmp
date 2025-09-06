@@ -81,6 +81,19 @@ export const Navbar = ({ className = "" }: NavbarProps) => {
               </Button>
             </Link>
 
+            <Link to="/dashboard">
+              <Button
+                variant="ghost"
+                className={`transition-colors font-medium ${
+                  isActive("/dashboard")
+                    ? "text-primary-glow bg-primary-soft border border-primary/20 rounded-lg px-4"
+                    : "text-muted-foreground hover:text-primary-glow"
+                }`}
+              >
+                Dashboard
+              </Button>
+            </Link>
+
             <Link to="/auth/sign-in">
               <Button className="btn-medical-primary group">
                 <Shield className="w-4 h-4 mr-2" />
