@@ -264,11 +264,14 @@ const Upload = () => {
                           className="hidden"
                           id="file-upload"
                         />
-                        <label htmlFor="file-upload">
-                          <Button className="btn-medical-primary cursor-pointer">
+                        <label 
+                          htmlFor="file-upload"
+                          className="inline-block"
+                        >
+                          <div className="btn-medical-primary cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2">
                             <UploadIcon className="w-5 h-5 mr-2" />
                             Choose Files
-                          </Button>
+                          </div>
                         </label>
                       </div>
                     </motion.div>
