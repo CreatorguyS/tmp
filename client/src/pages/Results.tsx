@@ -1,481 +1,468 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import {
-  Brain,
-  FileText,
-  Shield,
-  Download,
-  Share2,
-  AlertTriangle,
+import { 
+  FileText, 
+  Share2, 
+  Download, 
+  AlertTriangle, 
   CheckCircle,
   Clock,
-  User,
   Activity,
-  Heart,
   TrendingUp,
-  Eye,
-  Zap,
-  ArrowLeft,
+  Calendar,
+  Pill,
+  Heart,
+  Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
-import { useNavigate } from "react-router-dom";
+
+interface Entity {
+  type: 'medication' | 'symptom' | 'date' | 'lab' | 'condition';
+  value: string;
+  confidence: number;
+}
+
+interface Condition {
+  name: string;
+  confidence: number;
+}
+
+interface TimelineItem {
+  dateOrEstimate: string;
+  evidenceSnippet: string;
+  page?: number;
+}
+
+interface RiskAssessment {
+  risk: string;
+  severity: 'low' | 'moderate' | 'high';
+  consequence: string;
+}
+
+interface EvidenceHighlight {
+  quote: string;
+  page: number;
+  bbox?: number[];
+}
+
+interface Recommendation {
+  text: string;
+  urgency: 'normal' | 'soon' | 'urgent';
+}
+
+interface Analysis {
+  documentId: string;
+  ocrText: string;
+  entities: Entity[];
+  conditions: Condition[];
+  healthScore: number;
+  timeline: TimelineItem[];
+  clinicalContext: string;
+  riskAssessment: RiskAssessment[];
+  evidenceHighlights: EvidenceHighlight[];
+  recommendations: Recommendation[];
+}
 
 const Results = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showRawOCR, setShowRawOCR] = useState(false);
 
-  // Mock comprehensive analysis results
-  const analysisResults = {
-    analysisId: "HAS_2025_0106_001",
-    patientInfo: {
-      name: "John Patient",
-      age: 45,
-      gender: "Male",
-      analysisDate: new Date().toLocaleDateString()
-    },
-    overallRisk: "Moderate",
-    confidence: 94,
-    processingTime: "47 seconds",
-    documentsAnalyzed: [
-      { name: "Blood Test Results.pdf", type: "Lab Report", status: "Analyzed" },
-      { name: "Chest X-Ray Report.pdf", type: "Imaging", status: "Analyzed" },
-      { name: "Prescription.jpg", type: "Medication", status: "OCR Processed" }
-    ],
-    keyFindings: [
-      {
-        category: "Cardiovascular",
-        status: "attention",
-        title: "Elevated Cholesterol",
-        value: "245 mg/dL",
-        normal: "< 200 mg/dL",
-        severity: "Moderate",
-        description: "Total cholesterol is elevated above normal range"
-      },
-      {
-        category: "Metabolic",
-        status: "normal",
-        title: "Blood Glucose",
-        value: "95 mg/dL",
-        normal: "70-99 mg/dL",
-        severity: "Normal",
-        description: "Fasting glucose within healthy range"
-      },
-      {
-        category: "Cardiovascular",
-        status: "normal",
-        title: "Blood Pressure",
-        value: "128/82 mmHg",
-        normal: "< 130/80 mmHg",
-        severity: "Normal",
-        description: "Blood pressure within normal limits"
-      }
-    ],
-    riskAssessment: {
-      cardiovascular: { risk: "Moderate", score: 65, factors: ["Elevated cholesterol", "Age"] },
-      diabetes: { risk: "Low", score: 25, factors: ["Normal glucose"] },
-      overall: { risk: "Moderate", score: 58, factors: ["Cholesterol levels"] }
-    },
-    recommendations: [
-      {
-        priority: "High",
-        category: "Lifestyle",
-        title: "Dietary Modifications",
-        description: "Reduce saturated fat intake and increase fiber consumption",
-        timeline: "Immediate"
-      },
-      {
-        priority: "Medium",
-        category: "Medical",
-        title: "Follow-up Testing",
-        description: "Repeat lipid panel in 3 months to monitor cholesterol levels",
-        timeline: "3 months"
-      },
-      {
-        priority: "Medium",
-        category: "Lifestyle",
-        title: "Exercise Program",
-        description: "Initiate moderate cardio exercise 30 minutes, 5 days per week",
-        timeline: "This week"
-      }
-    ],
-    medications: [
-      {
-        name: "Atorvastatin",
-        dosage: "20mg daily",
-        purpose: "Cholesterol management",
-        instructions: "Take with evening meal"
-      }
-    ]
-  };
+  useEffect(() => {
+    fetchAnalysis();
+  }, [id]);
 
-  const getRiskColor = (risk: string) => {
-    switch (risk.toLowerCase()) {
-      case "low": return "text-green-400 bg-green-900/30 border-green-700";
-      case "moderate": return "text-yellow-400 bg-yellow-900/30 border-yellow-700";
-      case "high": return "text-red-400 bg-red-900/30 border-red-700";
-      default: return "text-gray-400 bg-gray-900/30 border-gray-700";
+  const fetchAnalysis = async () => {
+    try {
+      const response = await fetch(`/api/documents/${id}/analysis`, {
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          navigate('/login');
+          return;
+        }
+        throw new Error('Failed to fetch analysis');
+      }
+
+      const data = await response.json();
+      setAnalysis(data.analysis);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load analysis');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "normal": return <CheckCircle className="w-5 h-5 text-green-400" />;
-      case "attention": return <AlertTriangle className="w-5 h-5 text-yellow-400" />;
-      case "critical": return <AlertTriangle className="w-5 h-5 text-red-400" />;
-      default: return <Eye className="w-5 h-5 text-gray-400" />;
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'low': return 'text-green-600 bg-green-100';
+      case 'moderate': return 'text-yellow-600 bg-yellow-100';
+      case 'high': return 'text-red-600 bg-red-100';
+      default: return 'text-gray-600 bg-gray-100';
     }
   };
 
-  const generateDoctorReport = () => {
-    const reportContent = `
-MEDICAL ANALYSIS REPORT
-Analysis ID: ${analysisResults.analysisId}
-Patient: ${analysisResults.patientInfo.name}
-Date: ${analysisResults.patientInfo.analysisDate}
-
-OVERALL ASSESSMENT:
-Risk Level: ${analysisResults.overallRisk} (${analysisResults.confidence}% confidence)
-
-KEY FINDINGS:
-${analysisResults.keyFindings.map(finding => 
-  `• ${finding.title}: ${finding.value} (${finding.severity})`
-).join('\n')}
-
-RECOMMENDATIONS:
-${analysisResults.recommendations.map(rec => 
-  `• ${rec.title} (${rec.priority} priority) - ${rec.description}`
-).join('\n')}
-
-This report was generated by HealthSpectrum AI Analysis System.
-Please consult with your healthcare provider for medical interpretation.
-    `;
-
-    const blob = new Blob([reportContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `HealthSpectrum_Report_${analysisResults.analysisId}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const getUrgencyColor = (urgency: string) => {
+    switch (urgency) {
+      case 'normal': return 'text-green-600 bg-green-100';
+      case 'soon': return 'text-yellow-600 bg-yellow-100';
+      case 'urgent': return 'text-red-600 bg-red-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
   };
+
+  const getUrgencyIcon = (urgency: string) => {
+    switch (urgency) {
+      case 'normal': return '🟢';
+      case 'soon': return '🟡';
+      case 'urgent': return '🔴';
+      default: return '⚪';
+    }
+  };
+
+  const getHealthScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-600';
+    if (score >= 60) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading analysis results...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !analysis) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Analysis Not Available</h2>
+            <p className="text-gray-600 mb-4">{error || 'Analysis results not found'}</p>
+            <Button onClick={() => navigate('/upload')} className="btn-medical-primary">
+              Upload New Document
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen cosmic-bg">
-      <div className="absolute inset-0 stars-pattern opacity-30"></div>
-      
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <Navbar />
       
-      <main className="pt-8 relative z-10">
-        <section className="py-12 md:py-20">
-          <div className="medical-container">
-            {/* Header */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center justify-between mb-8"
-            >
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  onClick={() => navigate('/upload')}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Upload
-                </Button>
-                <div>
-                  <h1 className="text-4xl font-bold text-medical-title">Medical Analysis Results</h1>
-                  <p className="text-muted-foreground mt-2">
-                    Analysis ID: {analysisResults.analysisId} • Completed in {analysisResults.processingTime}
-                  </p>
-                </div>
-              </div>
+      <div className="container mx-auto px-4 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-6xl mx-auto"
+        >
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Analysis Results</h1>
+            <p className="text-gray-600">Comprehensive health insights from your medical document</p>
+          </div>
+
+          <div className="grid lg:grid-cols-4 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-3 space-y-8">
               
-              <div className="flex items-center space-x-3">
-                <Button onClick={generateDoctorReport} className="btn-medical-primary">
-                  <Download className="w-4 h-4 mr-2" />
-                  Download Report
-                </Button>
-                <Button variant="outline" className="border-accent text-accent hover:bg-accent/10">
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share with Doctor
-                </Button>
-              </div>
-            </motion.div>
-
-            {/* Risk Overview */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
-            >
-              <div className={`card-medical p-6 border-l-4 border-l-yellow-400`}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Overall Risk</p>
-                    <p className="text-2xl font-bold text-yellow-400">{analysisResults.overallRisk}</p>
-                  </div>
-                  <TrendingUp className="w-8 h-8 text-yellow-400" />
-                </div>
-              </div>
-              
-              <div className="card-medical p-6 border-l-4 border-l-blue-400">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">AI Confidence</p>
-                    <p className="text-2xl font-bold text-blue-400">{analysisResults.confidence}%</p>
-                  </div>
-                  <Brain className="w-8 h-8 text-blue-400" />
-                </div>
-              </div>
-              
-              <div className="card-medical p-6 border-l-4 border-l-green-400">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Documents</p>
-                    <p className="text-2xl font-bold text-green-400">{analysisResults.documentsAnalyzed.length}</p>
-                  </div>
-                  <FileText className="w-8 h-8 text-green-400" />
-                </div>
-              </div>
-              
-              <div className="card-medical p-6 border-l-4 border-l-purple-400">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Processing</p>
-                    <p className="text-2xl font-bold text-purple-400">{analysisResults.processingTime}</p>
-                  </div>
-                  <Zap className="w-8 h-8 text-purple-400" />
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Tabs */}
-            <div className="border-b border-border mb-8">
-              <nav className="flex space-x-8">
-                {[
-                  { id: "overview", label: "Overview", icon: Eye },
-                  { id: "findings", label: "Key Findings", icon: Heart },
-                  { id: "risks", label: "Risk Assessment", icon: AlertTriangle },
-                  { id: "recommendations", label: "Recommendations", icon: Activity }
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center space-x-2 py-4 px-1 border-b-2 transition-colors ${
-                      activeTab === tab.id
-                        ? "border-primary text-primary"
-                        : "border-transparent text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <tab.icon className="w-4 h-4" />
-                    <span>{tab.label}</span>
-                  </button>
-                ))}
-              </nav>
-            </div>
-
-            {/* Tab Content */}
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {activeTab === "overview" && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <div className="space-y-6">
-                    <div className="card-medical">
-                      <h3 className="text-xl font-semibold text-foreground mb-4">Patient Information</h3>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Name:</span>
-                          <span className="text-foreground">{analysisResults.patientInfo.name}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Age:</span>
-                          <span className="text-foreground">{analysisResults.patientInfo.age} years</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Gender:</span>
-                          <span className="text-foreground">{analysisResults.patientInfo.gender}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Analysis Date:</span>
-                          <span className="text-foreground">{analysisResults.patientInfo.analysisDate}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="card-medical">
-                      <h3 className="text-xl font-semibold text-foreground mb-4">Current Medications</h3>
-                      <div className="space-y-3">
-                        {analysisResults.medications.map((med, index) => (
-                          <div key={index} className="p-3 bg-muted/30 rounded-lg">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <p className="font-medium text-foreground">{med.name}</p>
-                                <p className="text-sm text-muted-foreground">{med.dosage}</p>
-                              </div>
-                              <span className="text-xs bg-accent/20 text-accent px-2 py-1 rounded">
-                                {med.purpose}
-                              </span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-2">{med.instructions}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="card-medical">
-                    <h3 className="text-xl font-semibold text-foreground mb-4">Documents Analyzed</h3>
-                    <div className="space-y-3">
-                      {analysisResults.documentsAnalyzed.map((doc, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            <FileText className="w-5 h-5 text-accent" />
-                            <div>
-                              <p className="font-medium text-foreground">{doc.name}</p>
-                              <p className="text-sm text-muted-foreground">{doc.type}</p>
-                            </div>
-                          </div>
-                          <span className="text-xs bg-green-900/30 text-green-400 px-2 py-1 rounded border border-green-700">
-                            {doc.status}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+              {/* Detected Conditions */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="bg-white rounded-lg shadow-lg p-6"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                    <Heart className="w-5 h-5 mr-2 text-red-500" />
+                    Detected Conditions
+                  </h2>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600">Overall Health Score</p>
+                    <p className={`text-2xl font-bold ${getHealthScoreColor(analysis.healthScore)}`}>
+                      {analysis.healthScore}/100
+                    </p>
                   </div>
                 </div>
-              )}
-
-              {activeTab === "findings" && (
-                <div className="space-y-6">
-                  {analysisResults.keyFindings.map((finding, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="card-medical"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-4">
-                          {getStatusIcon(finding.status)}
-                          <div>
-                            <h4 className="text-lg font-semibold text-foreground">{finding.title}</h4>
-                            <p className="text-sm text-muted-foreground mb-2">{finding.category}</p>
-                            <p className="text-muted-foreground">{finding.description}</p>
-                          </div>
+                
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {analysis.conditions.map((condition, index) => (
+                    <div key={index} className="border rounded-lg p-4">
+                      <h3 className="font-medium text-gray-900 mb-1">{condition.name}</h3>
+                      <div className="flex items-center">
+                        <div className="flex-1 bg-gray-200 rounded-full h-2 mr-3">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full"
+                            style={{ width: `${condition.confidence * 100}%` }}
+                          ></div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-foreground">{finding.value}</p>
-                          <p className="text-sm text-muted-foreground">Normal: {finding.normal}</p>
-                          <span className={`inline-block px-2 py-1 rounded text-xs border ${getRiskColor(finding.severity)}`}>
-                            {finding.severity}
-                          </span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-
-              {activeTab === "risks" && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {Object.entries(analysisResults.riskAssessment).map(([category, data]) => (
-                    <motion.div
-                      key={category}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="card-medical"
-                    >
-                      <h4 className="text-lg font-semibold text-foreground capitalize mb-4">{category} Risk</h4>
-                      <div className="text-center mb-4">
-                        <div className={`text-3xl font-bold mb-2 ${getRiskColor(data.risk).split(' ')[0]}`}>
-                          {data.score}%
-                        </div>
-                        <span className={`px-3 py-1 rounded-full text-sm border ${getRiskColor(data.risk)}`}>
-                          {data.risk} Risk
+                        <span className="text-sm font-medium text-gray-700">
+                          {Math.round(condition.confidence * 100)}%
                         </span>
                       </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-2">Risk Factors:</p>
-                        <ul className="space-y-1">
-                          {data.factors.map((factor, idx) => (
-                            <li key={idx} className="text-sm text-foreground flex items-center space-x-2">
-                              <div className="w-1.5 h-1.5 bg-accent rounded-full"></div>
-                              <span>{factor}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
-              )}
+              </motion.div>
 
-              {activeTab === "recommendations" && (
-                <div className="space-y-6">
-                  {analysisResults.recommendations.map((rec, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="card-medical"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                              rec.priority === 'High' ? 'bg-red-900/30 text-red-400 border border-red-700' :
-                              rec.priority === 'Medium' ? 'bg-yellow-900/30 text-yellow-400 border border-yellow-700' :
-                              'bg-green-900/30 text-green-400 border border-green-700'
-                            }`}>
-                              {rec.priority} Priority
-                            </span>
-                            <span className="text-sm text-muted-foreground">{rec.category}</span>
+              {/* Timeline Analysis */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white rounded-lg shadow-lg p-6"
+              >
+                <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                  <Calendar className="w-5 h-5 mr-2 text-blue-500" />
+                  Timeline Analysis
+                </h2>
+                
+                <div className="space-y-4">
+                  {analysis.timeline.map((item, index) => (
+                    <div key={index} className="flex items-start space-x-4">
+                      <div className="flex-shrink-0">
+                        <div className="w-3 h-3 bg-blue-600 rounded-full mt-2"></div>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{item.dateOrEstimate}</p>
+                        <p className="text-gray-600">{item.evidenceSnippet}</p>
+                        {item.page && (
+                          <p className="text-sm text-gray-500 mt-1">Page {item.page}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Clinical Context */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="bg-white rounded-lg shadow-lg p-6"
+              >
+                <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                  <FileText className="w-5 h-5 mr-2 text-green-500" />
+                  Clinical Context
+                </h2>
+                <p className="text-gray-700 leading-relaxed">{analysis.clinicalContext}</p>
+              </motion.div>
+
+              {/* Risk Assessment */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="bg-white rounded-lg shadow-lg p-6"
+              >
+                <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                  <AlertTriangle className="w-5 h-5 mr-2 text-orange-500" />
+                  Risk Assessment
+                </h2>
+                
+                <div className="space-y-4">
+                  {analysis.riskAssessment.map((risk, index) => (
+                    <div key={index} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="font-medium text-gray-900">{risk.risk}</h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getSeverityColor(risk.severity)}`}>
+                          {risk.severity.toUpperCase()}
+                        </span>
+                      </div>
+                      <p className="text-gray-600">{risk.consequence}</p>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Evidence Highlights */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="bg-white rounded-lg shadow-lg p-6"
+              >
+                <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                  <Eye className="w-5 h-5 mr-2 text-purple-500" />
+                  Evidence Highlights
+                </h2>
+                
+                <div className="space-y-3">
+                  {analysis.evidenceHighlights.map((highlight, index) => (
+                    <div key={index} className="border-l-4 border-blue-500 pl-4 py-2">
+                      <p className="text-gray-900 italic">"{highlight.quote}"</p>
+                      <p className="text-sm text-gray-500 mt-1">Page {highlight.page}</p>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Recommendations */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="bg-white rounded-lg shadow-lg p-6"
+              >
+                <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                  <CheckCircle className="w-5 h-5 mr-2 text-green-500" />
+                  Recommendations
+                </h2>
+                
+                <div className="space-y-4">
+                  {analysis.recommendations.map((recommendation, index) => (
+                    <div key={index} className="flex items-start space-x-3">
+                      <span className="text-lg">{getUrgencyIcon(recommendation.urgency)}</span>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor(recommendation.urgency)}`}>
+                            {recommendation.urgency.toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="text-gray-700">{recommendation.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* OCR Text Toggle */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+                className="bg-white rounded-lg shadow-lg p-6"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">Raw Document Text</h2>
+                  <Button
+                    onClick={() => setShowRawOCR(!showRawOCR)}
+                    variant="outline"
+                  >
+                    {showRawOCR ? 'Hide' : 'Show'} Raw Text
+                  </Button>
+                </div>
+                
+                {showRawOCR && (
+                  <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
+                    <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono">
+                      {analysis.ocrText}
+                    </pre>
+                  </div>
+                )}
+              </motion.div>
+            </div>
+
+            {/* Right Sidebar */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-8 space-y-6">
+                
+                {/* Entity Chips */}
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Pill className="w-4 h-4 mr-2 text-blue-500" />
+                    Key Entities
+                  </h3>
+                  
+                  <div className="space-y-3">
+                    {['medication', 'condition', 'lab', 'symptom', 'date'].map(type => {
+                      const entities = analysis.entities.filter(e => e.type === type);
+                      if (entities.length === 0) return null;
+                      
+                      return (
+                        <div key={type}>
+                          <h4 className="text-sm font-medium text-gray-700 mb-2 capitalize">
+                            {type}s
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {entities.map((entity, index) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                              >
+                                {entity.value}
+                                <span className="ml-1 text-blue-600">
+                                  {Math.round(entity.confidence * 100)}%
+                                </span>
+                              </span>
+                            ))}
                           </div>
-                          <h4 className="text-lg font-semibold text-foreground mb-2">{rec.title}</h4>
-                          <p className="text-muted-foreground">{rec.description}</p>
                         </div>
-                        <div className="ml-4 text-right">
-                          <Clock className="w-4 h-4 text-accent mb-1" />
-                          <p className="text-sm text-accent">{rec.timeline}</p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      );
+                    })}
+                  </div>
                 </div>
-              )}
-            </motion.div>
 
-            {/* HIPAA Compliance Notice */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="mt-12 p-6 bg-accent-soft border border-accent/30 rounded-xl"
-            >
-              <div className="flex items-start space-x-3">
-                <Shield className="w-6 h-6 text-accent flex-shrink-0 mt-1" />
-                <div>
-                  <h4 className="font-semibold text-accent mb-2">HIPAA Compliant & Secure</h4>
-                  <p className="text-sm text-accent/80 leading-relaxed">
-                    This analysis was processed with full HIPAA compliance. Your medical data is encrypted end-to-end 
-                    and automatically deleted after analysis. This report is for informational purposes only and should 
-                    not replace professional medical advice. Please consult with your healthcare provider for medical interpretation.
-                  </p>
+                {/* Action Buttons */}
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
+                  
+                  <div className="space-y-3">
+                    <Button 
+                      onClick={() => navigate(`/viewer/${id}`)}
+                      className="w-full btn-medical-primary"
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Open Viewer
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => window.open(`/api/documents/export/pdf/${id}`, '_blank')}
+                      variant="outline" 
+                      className="w-full"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Export PDF
+                    </Button>
+                    
+                    <Button 
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`/api/documents/share/${id}`, {
+                            method: 'POST',
+                            credentials: 'include'
+                          });
+                          const data = await response.json();
+                          navigator.clipboard.writeText(data.shareUrl);
+                          alert('Share link copied to clipboard!');
+                        } catch (err) {
+                          alert('Failed to create share link');
+                        }
+                      }}
+                      variant="outline" 
+                      className="w-full"
+                    >
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Share Secure Link
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           </div>
-        </section>
-      </main>
+        </motion.div>
+      </div>
     </div>
   );
 };

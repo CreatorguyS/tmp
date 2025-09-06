@@ -30,10 +30,11 @@ app.use(
 app.use(cookieParser());
 app.use(express.json());
 
-// Import authentication routes
-import userRoutes from './routes/User.routes.js';
+// Import routes following the new API structure
+import authRoutes from './routes/auth.routes.js';
+import patientRoutes from './routes/patient.routes.js';
+import documentsRoutes from './routes/documents.routes.js';
 import oauthRoutes from './routes/OAuth.routes.js';
-import uploadRoutes from './routes/Upload.routes.js';
 import passport from './controllers/OAuth.controllers.js';
 
 // Initialize Passport
@@ -44,11 +45,14 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', message: 'Server is running' });
 });
 
-// Authentication routes
-app.use('/api/auth', userRoutes);
-app.use('/api/auth', oauthRoutes);
+// API routes following the specification
+app.use('/api/auth', authRoutes);        // Authentication
+app.use('/api/patient', patientRoutes);  // Patient profile management  
+app.use('/api/documents', documentsRoutes); // Document upload and analysis
+app.use('/api/auth', oauthRoutes);       // OAuth authentication
 
-// Upload routes
+// Legacy upload route for backwards compatibility
+import uploadRoutes from './routes/Upload.routes.js';
 app.use('/api/upload', uploadRoutes);
 
 export { app };
