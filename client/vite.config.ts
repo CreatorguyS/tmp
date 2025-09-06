@@ -12,6 +12,13 @@ export default defineConfig(({ mode }) => ({
     allowedHosts: true,
     hmr: false,
     ws: false,
+    proxy: {
+      '/api-proxy': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-proxy/, '')
+      }
+    }
   },
   plugins: [react()].filter(Boolean),
   resolve: {
