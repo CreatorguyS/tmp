@@ -261,18 +261,20 @@ const Upload = () => {
                           multiple
                           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                           onChange={handleFileInput}
-                          className="hidden"
+                          style={{ display: 'none' }}
                           id="file-upload"
                         />
-                        <label 
-                          htmlFor="file-upload"
-                          className="inline-block"
+                        <Button 
+                          type="button"
+                          className="btn-medical-primary cursor-pointer"
+                          onClick={() => {
+                            const input = document.getElementById('file-upload') as HTMLInputElement;
+                            input?.click();
+                          }}
                         >
-                          <div className="btn-medical-primary cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2">
-                            <UploadIcon className="w-5 h-5 mr-2" />
-                            Choose Files
-                          </div>
-                        </label>
+                          <UploadIcon className="w-5 h-5 mr-2" />
+                          Choose Files
+                        </Button>
                       </div>
                     </motion.div>
                   </div>
