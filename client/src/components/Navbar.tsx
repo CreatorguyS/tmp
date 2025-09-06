@@ -81,6 +81,19 @@ export const Navbar = ({ className = "" }: NavbarProps) => {
               </Button>
             </Link>
 
+            <Link to="/history">
+              <Button
+                variant="ghost"
+                className={`transition-colors font-medium ${
+                  isActive("/history")
+                    ? "text-primary-glow bg-primary-soft border border-primary/20 rounded-lg px-4"
+                    : "text-muted-foreground hover:text-primary-glow"
+                }`}
+              >
+                History
+              </Button>
+            </Link>
+
             <Link to="/dashboard">
               <Button
                 variant="ghost"

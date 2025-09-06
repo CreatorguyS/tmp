@@ -69,45 +69,69 @@ const Upload = () => {
   ];
 
   const handleAnalyze = async () => {
+    if (uploadedFiles.length === 0) {
+      alert('Please select files to upload');
+      return;
+    }
+
+    // Check authentication first
+    try {
+      const authResponse = await fetch('/api/auth/me', {
+        credentials: 'include'
+      });
+      
+      if (!authResponse.ok) {
+        alert('🔐 Please sign in to analyze your documents. Click "Log In/Sign Up" in the top navigation to get started.');
+        navigate('/auth/sign-in');
+        return;
+      }
+    } catch (error) {
+      alert('❌ Authentication check failed. Please sign in first.');
+      navigate('/auth/sign-in');
+      return;
+    }
+
     setIsProcessing(true);
     setProcessingStep(0);
     
     try {
-      const fileNames = uploadedFiles.map(file => file.name);
-      
-      // Simulate step-by-step processing
-      for (let i = 0; i < processingSteps.length; i++) {
-        setProcessingStep(i);
-        await new Promise(resolve => setTimeout(resolve, 1200));
-      }
-      
-      const response = await fetch(`${import.meta.env.VITE_API_URL || '/api-proxy'}/api/upload/documents`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ files: fileNames }),
+      // Create form data with actual files
+      const formData = new FormData();
+      uploadedFiles.forEach(file => {
+        formData.append('files', file);
       });
 
-      const data = await response.json();
+      // Show uploading step
+      setProcessingStep(0);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const response = await fetch('/api/documents/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
 
-      if (data.success) {
-        // Navigate to results page with the analysis data
-        navigate('/results', { state: { analysisResults: data.results } });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Upload failed');
+      }
+
+      const data = await response.json();
+      
+      if (data.documents && data.documents.length > 0) {
+        // Show completion step briefly
+        setProcessingStep(processingSteps.length - 1);
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Navigate to processing page for the first document
+        const firstDocumentId = data.documents[0].documentId;
+        navigate(`/processing/${firstDocumentId}`);
       } else {
-        if (data.message === "No authentication token provided") {
-          alert('🔐 Please sign in to analyze your documents. Click "Log In/Sign Up" in the top navigation to get started.');
-          // Redirect to sign in page
-          setTimeout(() => navigate('/auth/sign-in'), 2000);
-        } else {
-          alert(`❌ Analysis Failed: ${data.message}`);
-        }
+        throw new Error('No documents were uploaded successfully');
       }
     } catch (error) {
-      console.error('Analysis error:', error);
-      alert('❌ Upload failed. Please sign in first by clicking "Log In/Sign Up" in the navigation above, then try again.');
-      setTimeout(() => navigate('/auth/sign-in'), 3000);
+      console.error('Upload error:', error);
+      alert(`❌ Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsProcessing(false);
       setProcessingStep(0);

@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Upload from "./pages/Upload";
 import Results from "./pages/Results";
+import Processing from "./pages/Processing";
+import History from "./pages/History";
 import Dashboard from "./pages/Dashboard";
 import AboutPage from "./pages/AboutPage";
 import NotFound from "./pages/NotFound";
@@ -29,7 +31,9 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/upload" element={<Upload />} />
-          <Route path="/results" element={<Results />} />
+          <Route path="/processing/:id" element={<Processing />} />
+          <Route path="/results/:id" element={<Results />} />
+          <Route path="/history" element={<History />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
