@@ -1,5 +1,6 @@
 import User from "../models/User.models.js";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
 // JWT secret - in production, this should be an environment variable
 const JWT_SECRET = process.env.JWT_SECRET || "healthspectrum_secret_key_2024";
@@ -22,6 +23,9 @@ const setTokenCookie = (res, token) => {
     res.cookie("authToken", token, cookieOptions);
 };
 
+// Temporary in-memory storage for development
+const users = new Map();
+
 // Register new user
 export const registerUser = async (req, res) => {
     try {
@@ -36,26 +40,45 @@ export const registerUser = async (req, res) => {
         }
 
         // Check if user already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
+        if (users.has(email)) {
             return res.status(409).json({
                 success: false,
                 message: "User already exists with this email",
             });
         }
 
-        // Create new user
-        const user = new User({ email, password, name });
-        await user.save();
+        // Hash password
+        const saltRounds = 12;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        // Create user object
+        const userId = Date.now().toString();
+        const user = {
+            _id: userId,
+            email,
+            password: hashedPassword,
+            name,
+            isVerified: false,
+            lastLogin: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date()
+        };
+
+        // Store user
+        users.set(email, user);
 
         // Generate token and set cookie
-        const token = generateToken(user._id);
+        const token = generateToken(userId);
         setTokenCookie(res, token);
+
+        // Remove password from response
+        const userResponse = { ...user };
+        delete userResponse.password;
 
         res.status(201).json({
             success: true,
             message: "User registered successfully",
-            user: user.toJSON(),
+            user: userResponse,
         });
     } catch (error) {
         console.error("Registration error:", error);
@@ -80,8 +103,8 @@ export const loginUser = async (req, res) => {
             });
         }
 
-        // Find user and include password for comparison
-        const user = await User.findOne({ email }).select("+password");
+        // Find user
+        const user = users.get(email);
         if (!user) {
             return res.status(401).json({
                 success: false,
@@ -90,7 +113,7 @@ export const loginUser = async (req, res) => {
         }
 
         // Compare password
-        const isPasswordValid = await user.comparePassword(password);
+        const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(401).json({
                 success: false,
@@ -100,16 +123,20 @@ export const loginUser = async (req, res) => {
 
         // Update last login
         user.lastLogin = new Date();
-        await user.save();
+        users.set(email, user);
 
         // Generate token and set cookie
         const token = generateToken(user._id);
         setTokenCookie(res, token);
 
+        // Remove password from response
+        const userResponse = { ...user };
+        delete userResponse.password;
+
         res.status(200).json({
             success: true,
             message: "Login successful",
-            user: user.toJSON(),
+            user: userResponse,
         });
     } catch (error) {
         console.error("Login error:", error);
@@ -142,17 +169,29 @@ export const logoutUser = async (req, res) => {
 // Get current user profile
 export const getCurrentUser = async (req, res) => {
     try {
-        const user = await User.findById(req.userId);
-        if (!user) {
+        // Find user by ID in our in-memory storage
+        let foundUser = null;
+        for (const user of users.values()) {
+            if (user._id === req.userId) {
+                foundUser = user;
+                break;
+            }
+        }
+
+        if (!foundUser) {
             return res.status(404).json({
                 success: false,
                 message: "User not found",
             });
         }
 
+        // Remove password from response
+        const userResponse = { ...foundUser };
+        delete userResponse.password;
+
         res.status(200).json({
             success: true,
-            user: user.toJSON(),
+            user: userResponse,
         });
     } catch (error) {
         console.error("Get user error:", error);
