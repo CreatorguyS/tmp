@@ -37,9 +37,32 @@ const SignIn = () => {
     </svg>
   );
 
-  const handleSignInSubmit = (e) => {
+  const handleSignInSubmit = async (e) => {
     e.preventDefault();
-    console.log("Sign In form submitted with:", { email, password });
+    
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies for authentication
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Login successful! Welcome back.');
+        // Redirect to dashboard or home page
+        window.location.href = '/';
+      } else {
+        alert(`Login failed: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Login failed. Please try again.');
+    }
   };
 
   return (

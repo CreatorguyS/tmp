@@ -38,13 +38,36 @@ const SignUp = () => {
     </svg>
   );
 
-  const handleSignUpSubmit = (e) => {
+  const handleSignUpSubmit = async (e) => {
     e.preventDefault();
-    console.log("Sign Up form submitted with:", {
-      fullName,
-      email,
-      password,
-    });
+    
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies for authentication
+        body: JSON.stringify({ 
+          name: fullName,
+          email, 
+          password 
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Registration successful! Welcome to HealthSpectrum.');
+        // Redirect to dashboard or home page
+        window.location.href = '/';
+      } else {
+        alert(`Registration failed: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('Registration failed. Please try again.');
+    }
   };
 
   return (
